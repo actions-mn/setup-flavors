@@ -11,17 +11,17 @@ concurrency:
 
 jobs:
   lint:
-    name: Test actions-mn/cli/new action on ${{ matrix.os }}
+    name: Lint
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Yaml lint
-      run: |
+
+    - run: |
         sudo apt-get install yamllint
-        yamllint **/*
+        yamllint action.yml
 
   test-setup-flavors-docker:
-    name: Test actions-mn/cli/setup-flavors@${{ github.head_ref }} action on ${{ matrix.os }}
+    name: Test ${{ matrix.flavors }} on docker
     runs-on: ubuntu-latest
     container:
       image: metanorma/metanorma:latest
@@ -71,7 +71,7 @@ jobs:
         use-bundler: true
 
   test-setup-flavors:
-    name: Test actions-mn/cli/setup-flavors@${{ github.head_ref }} action on ${{ matrix.os }}
+    name: Test ${{ matrix.flavors }} on Ubuntu
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
