@@ -1,0 +1,49 @@
+name: 'metanorma-setup-flavors'
+description: 'Composite action which help to install custom/private flavors'
+inputs:
+  extra-flavors:
+    description: 'Space separated list of extra flavor extensions'
+    default: ''
+  github-pakages-token:
+    description: 'GitHub token to access gems'
+    default: ''
+  use-bundler:
+    description: 'Use "bundler add" instead "gem install"'
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        apt-get update -y && apt-get install -y gcc g++ ruby-dev
+
+        if [ "${{ inputs.github-pakages-token }}" != "" ]; then
+          curl -L --retry 3 https://raw.githubusercontent.com/metanorma/ci/8808124694a5ca204d5a278519ad6fd2ad5a4e84/gh-rubygems-setup-action/gen-gemrc-for-gh-packages.sh > gen-gemrc-for-gh-packages.sh
+          chmod +x gen-gemrc-for-gh-packages.sh
+          source gen-gemrc-for-gh-packages.sh "${{ inputs.github-pakages-token }}"
+          curl -L --retry 3 https://raw.githubusercontent.com/metanorma/ci/8808124694a5ca204d5a278519ad6fd2ad5a4e84/gh-rubygems-setup-action/gen-bundle-config-for-gh-packages.sh > gen-bundle-config-for-gh-packages.sh
+          chmod +x gen-bundle-config-for-gh-packages.sh
+          source gen-bundle-config-for-gh-packages.sh "${{ inputs.github-pakages-token }}" metanorma
+        fi
+
+        for flavor in ${{ inputs.extra-flavors }}; do
+          if [ "${{ inputs.use-bundler }}" = "true" ]; then
+            if [ "${flavor}" = "bsi" -o "${flavor}" = "nist" ]; then
+              bundle add metanorma-${flavor} --source https://rubygems.pkg.github.com/metanorma
+            else
+              bundle add metanorma-${flavor}
+            fi
+          else
+            gem install metanorma-${flavor}
+          fi
+
+          if [ "${flavor}" = "bsi" ]; then
+            if ! command -v fontist &> /dev/null; then
+              gem install fontist
+            fi
+            fontist update
+            fontist repo setup metanorma https://metanorma-ci:${{ inputs.github-pakages-token }}@github.com/metanorma/fontist-formulas-private
+            fontist repo update metanorma
+          fi
+        done

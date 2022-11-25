@@ -1,0 +1,126 @@
+name: test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref_name }}'
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Test actions-mn/cli/new action on ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Yaml lint
+      run: |
+        sudo apt-get install yamllint
+        yamllint **/*
+
+  test-setup-flavors-docker:
+    name: Test actions-mn/cli/setup-flavors@${{ github.head_ref }} action on ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    container:
+      image: metanorma/metanorma:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flavors:
+        - ribose
+        - bsi
+        - ribose bsi
+        - ribose bsi nist
+    steps:
+    - uses: actions/checkout@v3
+
+    - if: contains(matrix.flavors, 'ribose')
+      uses: actions/checkout@v3
+      with:
+        repository: metanorma/mn-samples-ribose
+        path: ribose
+
+    - if: contains(matrix.flavors, 'bsi')
+      uses: actions/checkout@v3
+      with:
+        repository: metanorma/mn-samples-bsi
+        path: bsi
+        token: ${{ secrets.METANORMA_CI_PAT_TOKEN }}
+
+    - uses: ./setup-flavors
+      with:
+        extra-flavors: ${{ matrix.flavors }}
+        github-pakages-token: ${{ secrets.METANORMA_CI_PAT_TOKEN }}
+
+    - if: contains(matrix.flavors, 'ribose')
+      uses: actions-mn/site-gen@main
+      with:
+        source-path: ribose
+        config-file: metanorma.yml
+        agree-to-terms: true
+        use-bundler: true
+
+    - if: contains(matrix.flavors, 'bsi')
+      uses: actions-mn/site-gen@main
+      with:
+        source-path: bsi
+        config-file: metanorma.yml
+        agree-to-terms: true
+        use-bundler: true
+
+  test-setup-flavors:
+    name: Test actions-mn/cli/setup-flavors@${{ github.head_ref }} action on ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flavors:
+        - ribose
+        - bsi
+        - ribose bsi
+        - ribose bsi nist
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.1'
+
+    - run: gem install metanorma-cli
+
+    - if: contains(matrix.flavors, 'ribose')
+      uses: actions/checkout@v3
+      with:
+        repository: metanorma/mn-samples-ribose
+        path: ribose
+
+    - if: contains(matrix.flavors, 'bsi')
+      uses: actions/checkout@v3
+      with:
+        repository: metanorma/mn-samples-bsi
+        path: bsi
+        token: ${{ secrets.METANORMA_CI_PAT_TOKEN }}
+
+    - uses: ./setup-flavors
+      with:
+        extra-flavors: ${{ matrix.flavors }}
+        github-pakages-token: ${{ secrets.METANORMA_CI_PAT_TOKEN }}
+        use-bundler: false
+
+    - if: contains(matrix.flavors, 'ribose')
+      uses: actions-mn/site-gen@main
+      with:
+        source-path: ribose
+        config-file: metanorma.yml
+        agree-to-terms: true
+        use-bundler: false
+
+    - if: contains(matrix.flavors, 'bsi')
+      uses: actions-mn/site-gen@main
+      with:
+        source-path: bsi
+        config-file: metanorma.yml
+        agree-to-terms: true
+        use-bundler: false
