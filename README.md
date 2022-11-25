@@ -1,4 +1,4 @@
-[![test](https://github.com/actions-mn/setup-flavors/actions/workflows/test.yml/badge.svg)](https://github.com/actions-mn/site-gen/actions/workflows/test.yml)
+[![test](https://github.com/actions-mn/setup-flavors/actions/workflows/test.yml/badge.svg)](https://github.com/actions-mn/setup-flavors/actions/workflows/test.yml)
 
 # setup-flavors
 
