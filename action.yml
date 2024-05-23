@@ -29,7 +29,7 @@ runs:
 
         for flavor in ${{ inputs.extra-flavors }}; do
           if [ "${{ inputs.use-bundler }}" = "true" ]; then
-            if [ "${flavor}" = "bsi" -o "${flavor}" = "nist" ]; then
+            if [ "${flavor}" = "bsi" -o "${flavor}" = "nist" -o "${flavor}" = "plateau" ]; then
               bundle add metanorma-${flavor} --source https://rubygems.pkg.github.com/metanorma
             else
               bundle add metanorma-${flavor}
